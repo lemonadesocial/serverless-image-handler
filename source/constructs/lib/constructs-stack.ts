@@ -82,6 +82,26 @@ export class ConstructsStack extends cdk.Stack {
       description: 'The name of the default fallback image object key including prefix. e.g. prefix/image.jpg',
       default: ''
     });
+    const certificateArnParameter = new CfnParameter(this, 'CertificateArn', {
+      type: 'String',
+      description: '(Required) The certificate ARN for the image handler API.',
+      default: ''
+    });
+    const domainNameParameter = new CfnParameter(this, 'DomainName', {
+      type: 'String',
+      description: '(Required) The domain name for the image handler API.',
+      default: ''
+    });
+    const hostedZoneIdParameter = new CfnParameter(this, 'HostedZoneId', {
+      type: 'String',
+      description: '(Required) The hosted zone ID for the image handler API.',
+      default: ''
+    });
+    const zoneNameParameter = new CfnParameter(this, 'ZoneName', {
+      type: 'String',
+      description: '(Required) The zone name for the image handler API.',
+      default: ''
+    });
 
     // CFN descrption
     this.templateOptions.description = `(SO0023) - Serverless Image Handler with aws-solutions-constructs: This template deploys and configures a serverless architecture that is optimized for dynamic image manipulation and delivery at low latency and cost. Leverages SharpJS for image processing. Template version ${VERSION}`;
@@ -120,6 +140,10 @@ export class ConstructsStack extends cdk.Stack {
           {
             Label: { default: 'Auto WebP' },
             Parameters: [ autoWebPParameter.logicalId ]
+          },
+          {
+            Label: { default: 'DNS' },
+            Parameters: [ certificateArnParameter.logicalId, domainNameParameter.logicalId, hostedZoneIdParameter.logicalId, zoneNameParameter.logicalId ]
           }
         ]
       }
@@ -147,7 +171,11 @@ export class ConstructsStack extends cdk.Stack {
       secretsManagerKeyParameter,
       enableDefaultFallbackImageParameter,
       fallbackImageS3BucketParameter,
-      fallbackImageS3KeyParameter
+      fallbackImageS3KeyParameter,
+      certificateArnParameter,
+      domainNameParameter,
+      hostedZoneIdParameter,
+      zoneNameParameter
     };
 
     // Serverless Image Handler Construct

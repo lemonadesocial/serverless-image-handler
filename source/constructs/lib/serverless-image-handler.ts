@@ -9,6 +9,8 @@ import * as cdk from '@aws-cdk/core';
 import * as cdkCloudFront from '@aws-cdk/aws-cloudfront';
 import * as cdkApiGateway from '@aws-cdk/aws-apigateway';
 import * as cdkLogs from '@aws-cdk/aws-logs';
+import * as cdkRoute53 from '@aws-cdk/aws-route53';
+import * as cdkRoute53Targets from '@aws-cdk/aws-route53-targets';
 import { CloudFrontToApiGatewayToLambda } from '@aws-solutions-constructs/aws-cloudfront-apigateway-lambda';
 import { CloudFrontToS3 } from '@aws-solutions-constructs/aws-cloudfront-s3';
 import apiBody from './api.json';
@@ -32,6 +34,10 @@ export interface ServerlessImageHandlerProps {
   readonly enableDefaultFallbackImageParameter: CfnParameter;
   readonly fallbackImageS3BucketParameter: CfnParameter;
   readonly fallbackImageS3KeyParameter: CfnParameter;
+  readonly certificateArnParameter: CfnParameter;
+  readonly domainNameParameter: CfnParameter;
+  readonly hostedZoneIdParameter: CfnParameter;
+  readonly zoneNameParameter: CfnParameter;
 }
 
 /**
@@ -355,9 +361,21 @@ export class ServerlessImageHandler extends Construct {
         });
         cfnOriginRequestPolicy.overrideLogicalId("ImageHandlerOriginRequestPolicy");
  
+      // Configure DNS
+      new cdkRoute53.ARecord(this, 'ARecord', {
+        recordName: `${props.domainNameParameter.valueAsString}.`,
+        target: cdkRoute53.RecordTarget.fromAlias(new cdkRoute53Targets.CloudFrontTarget(cloudFrontWebDistribution)),
+        zone: cdkRoute53.HostedZone.fromHostedZoneAttributes(this, 'HostedZone', {
+          hostedZoneId: props.hostedZoneIdParameter.valueAsString,
+          zoneName: props.zoneNameParameter.valueAsString
+        })
+      });
+
       // ImageHandlerDistribution
       const cfnCloudFrontDistribution = cloudFrontWebDistribution.node.defaultChild as cdkCloudFront.CfnDistribution;
       cfnCloudFrontDistribution.distributionConfig = {
+        aliases: [ props.domainNameParameter.valueAsString ],
+        viewerCertificate: { acmCertificateArn: props.certificateArnParameter.valueAsString, sslSupportMethod: 'sni-only' },
         origins: [{
           domainName: `${apiGateway.restApiId}.execute-api.${cdk.Aws.REGION}.amazonaws.com`,
           id: apiGateway.restApiId,
