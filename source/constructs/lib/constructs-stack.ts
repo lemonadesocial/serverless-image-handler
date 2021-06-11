@@ -129,7 +129,7 @@ export class ConstructsStack extends cdk.Stack {
     new cdk.CfnMapping(this, 'Send', {
       mapping: {
         AnonymousUsage: {
-          Data: 'Yes'
+          Data: 'No'
         }
       }
     });
